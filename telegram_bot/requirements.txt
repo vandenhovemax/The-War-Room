@@ -1,0 +1,4 @@
+# Telegram companion bot. [job-queue] is required: bot.py schedules the event
+# poll and health check with app.job_queue.run_repeating().
+# Version verified with the test suite on 2026-10-08.
+python-telegram-bot[job-queue]==21.10

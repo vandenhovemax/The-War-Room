@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ag-dark: #0a0a0f;
+  --color-ag-darker: #060609;
+  --color-ag-card: #12121a;
+  --color-ag-card-hover: #1a1a25;
+  --color-ag-border: #1e1e2e;
+  --color-ag-text: #e2e2e8;
+  --color-ag-text-muted: #8888a0;
+  --color-ag-accent: #6366f1;
+  --color-ag-accent-hover: #818cf8;
+  --color-ag-green: #22c55e;
+  --color-ag-red: #ef4444;
+  --color-ag-yellow: #eab308;
+  --color-ag-blue: #3b82f6;
+}
+
+body {
+  background-color: var(--color-ag-dark);
+  color: var(--color-ag-text);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-ag-darker);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-ag-border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-ag-text-muted);
+}
+
+/* Toast slide-in animation */
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}

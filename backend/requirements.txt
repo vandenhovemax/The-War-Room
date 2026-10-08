@@ -1,0 +1,45 @@
+# The War Room — Backend Dependencies
+# Versions pinned to exact installed versions for reproducible builds.
+
+# Web framework
+fastapi==0.129.0
+uvicorn[standard]==0.41.0
+
+# Database
+sqlalchemy==2.0.46
+
+# Configuration
+pydantic==2.12.5
+pydantic-settings==2.13.1
+python-dotenv==1.2.1
+
+# HTTP client (Bybit public API)
+httpx==0.28.1
+
+# Data processing
+pandas==2.3.0
+numpy==2.3.0
+
+# Analysis/scoring stack — imported by backend.analysis but was never pinned
+# (worked on Windows only because it was installed globally). Versions =
+# exact dev-machine installs, discovered at Docker porting 2026-08-08.
+scipy==1.16.2
+scikit-learn==1.9.0
+pytz==2025.2
+python-dateutil==2.9.0.post0
+
+# WebSocket support (included with uvicorn[standard])
+websockets==16.0
+
+# Multipart form data
+python-multipart==0.0.22
+
+# Bybit V5 trading SDK (official)
+pybit==5.14.0
+
+# Nightly Live Loop scheduler (L1-L5 cron jobs, NYT timezone)
+apscheduler==3.11.2
+
+# IANA timezone data — zoneinfo fallback for slim Docker images without
+# a system tzdata package (no-op where system tzdata exists)
+tzdata==2025.2

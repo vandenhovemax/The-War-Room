@@ -1,0 +1,26 @@
+# Ruff linter + formatter config for The War Room backend
+line-length = 120
+target-version = "py313"
+
+[lint]
+select = ["E", "F", "W", "I"]
+ignore = [
+  "E501",   # line length — handled by formatter
+  "E402",   # import not at top — intentional (circular-import avoidance, logger setup)
+  "E702",   # multiple statements on semicolon — deliberate compact style
+  "E711",   # == None — needed for SQLAlchemy .filter() expressions
+  "E712",   # == True / == False — needed for SQLAlchemy .filter() expressions
+  "E741",   # ambiguous variable name (l, n) — conventional in math/data code
+  "F401",   # unused import — many are re-exports from __init__.py
+  "F811",   # redefined while unused — false positives on conditional imports
+  "F821",   # undefined name — false positives on string type annotations ("pd.DataFrame")
+  "F823",   # undefined local — false positive on string annotations
+  "I001",   # import sorting — cosmetic only, multi-agent workflow introduces unsorted imports
+]
+
+[lint.per-file-ignores]
+"tests/**" = ["F841"]  # unused variables in tests are often intentional setup
+
+[format]
+indent-style = "space"
+quote-style = "double"

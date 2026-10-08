@@ -1,0 +1,1183 @@
+==========================================
+  HOW TO START THE WAR ROOM
+==========================================
+
+
+--- EASIEST WAY ---
+
+On the author's Windows machine, two launcher scripts open every process
+in its own window. They are not included here; use the MANUAL WAY below,
+or the Docker images (see README).
+
+
+--- FIRST TIME ONLY (one-time setup) ---
+
+Before the first launch, open a terminal in the project folder and run:
+
+pip install -r backend/requirements.txt
+cd frontend
+npm install
+
+If using PowerShell, also run this once to allow scripts:
+  Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+
+
+--- MANUAL WAY (if you prefer) ---
+
+You can use either PowerShell or Command Prompt (cmd).
+You need FOUR terminal windows, all must stay open.
+
+All commands run from the The_War_Room folder.
+
+Terminal 1 (backend):
+  python -m backend.main
+
+Terminal 2 (download worker):
+  python download_worker.py
+
+Terminal 3 (candle sync + signal scanner):
+  python candle_sync.py
+
+Terminal 4 (frontend):
+  cd frontend
+  npx next dev -p 3033
+
+(Optional) Paper backend — only needed for paper portfolios:
+  set PORT=8056
+  set PAPER_TRADING=true
+  set WARROOM_DISABLE_SCHEDULER=1
+  python -m backend.main
+
+Then open ONE browser tab:
+  http://localhost:3033
+
+You only need one browser tab. The backend runs behind the
+scenes — you never open it in a browser.
+
+IMPORTANT: Start the backend FIRST (Terminal 1). Wait until it says
+"Uvicorn running on http://127.0.0.1:8055" before starting the other
+terminals. If you see "API error" on any page, check that Terminal 1
+(backend) is still running.
+
+The download worker (Terminal 2) handles manual downloads,
+portfolio refreshes, and AUTO-REFRESH of active portfolios.
+Any paper or real trading portfolio will automatically refresh
+~2 minutes after each candle close (based on the portfolio's
+timeframe). You can still click "Refresh" manually at any time.
+The candle sync (Terminal 3) automatically keeps data fresh and
+runs the signal scanner.
+
+
+--- HOW TO STOP ---
+
+Close all four terminal windows, or press Ctrl+C in each one.
+
+
+==========================================
+  HOW TO USE THE UI
+==========================================
+
+The sidebar on the left has all the pages:
+
+
+1. DASHBOARD
+   Your home screen. Shows a quick overview of how many strategies,
+   portfolios, positions, and trades you have. Each module card shows
+   whether that feature is live, being built, or planned.
+
+   Top-right corner: sun/moon icon to toggle dark/light mode.
+
+
+2. DATA
+   This is where you download price history from Bybit.
+
+   - Type symbol names in the "Add to watchlist" box (e.g. ATOMUSDT)
+     Use the Bybit name WITHOUT .P — just ATOMUSDT, not ATOMUSDT.P
+     You can add multiple at once: BTCUSDT, ETHUSDT, SOLUSDT
+   - Press Enter or click "Add" to add them to your watchlist
+   - Pick a timeframe (30m is your default)
+   - Click the download icon next to a symbol to fetch its full history
+   - Once downloaded, the icon changes to a green refresh icon (double arrows)
+     Click it to update that symbol with the latest candles
+   - "Download All Watchlist" fetches history for every symbol at once
+   - The "ADV ($)" column shows Average Daily Volume in dollars
+     Use this to check if a symbol is liquid enough to trade
+   - Switch to "All Symbols" tab to browse all 585+ Bybit pairs
+   - You need data downloaded before you can backtest
+
+
+3. STRATEGIES
+   This is where you add strategies. They run as Python classes.
+   (The old automatic PineScript transpiler was removed in March 2026.)
+
+   Two ways to add one:
+
+   "Build with AI" — convert a TradingView PineScript strategy:
+   - 1. Paste: paste your PineScript, tick "match TradingView" if you
+     want exact TradingView indicator smoothing, then click
+     "Generate Prompt for Claude"
+   - 2. Copy: copy the generated prompt into Claude.ai. It explains the
+     backtester's API and rules; Claude asks you questions, then writes
+     the Python class
+   - 3. Save: paste Claude's Python back, give it a name, click "Save Strategy"
+
+   "Paste Python" — paste a Python strategy you already have, name it, save.
+
+   - Your saved strategies appear in the list below
+   - Always run a backtest and compare against TradingView before trusting
+     a converted strategy
+
+
+4. BACKTEST
+   Run your strategies against historical data.
+
+   - Select a strategy from the dropdown
+   - Select a symbol (only symbols you've downloaded appear here)
+     The dropdown shows ADV next to each symbol name
+   - Pick the timeframe, starting capital, commission %, and leverage
+   - "Min ADV ($)" filter: set a minimum daily volume to reject illiquid symbols
+     (e.g. set to 5000000 to only allow symbols with >$5M daily volume)
+     Leave at 0 to disable the filter
+   - Click "Run Backtest"
+   - Wait for it to finish (you'll see a progress bar)
+   - Results show: net profit, win rate, profit factor, max drawdown,
+     Sharpe ratio, and a full trade-by-trade table
+   - Past backtests are saved and you can click any to review them
+
+   POSITION SIZING — MARTINGALE MODES:
+   The backtest and optimizer have 4 streak-based sizing modes:
+
+   Anti-Martingale (recommended for trend-following):
+     Increases position size after consecutive WINS.
+     Rides winning streaks, resets to base size after a loss.
+     Example: multiplier=2, 3 wins in a row → 8x base size.
+
+   Martingale (for mean-reversion systems only):
+     Increases position size after consecutive LOSSES.
+     Doubles down during drawdowns — high risk of ruin.
+     Example: multiplier=2, 3 losses in a row → 8x base size.
+
+   Inverse Martingale (defensive):
+     DECREASES position size after consecutive LOSSES.
+     Protects capital during drawdowns by shrinking position.
+     Example: multiplier=2, 3 losses in a row → 1/8 base size (12.5%).
+
+   Inverse Anti-Martingale (conservative profit taking):
+     DECREASES position size after consecutive WINS.
+     Takes profits conservatively by shrinking size during win streaks.
+     Example: multiplier=2, 3 wins in a row → 1/8 base size (12.5%).
+
+   Settings:
+     Multiplier — how much to scale per streak step (2 = double/halve)
+     Max Streak — stop scaling after this many consecutive wins/losses
+     Count Mode — how exits update the win/loss streak counter:
+       Full Position: the total position PnL (all exits summed) counts as
+         one +1 or -1. TP1 + TSL from the same trade = one event.
+       Each Exit: every fill (TP1, TSL, etc.) counts independently.
+         If TP1 is a win and TSL is a loss, that's +1 then -1.
+       TP + Confirmed TSL: TP exits always count toward the streak.
+         TSL exits only count if they close at profit (SL moved past
+         breakeven). For pyramid positions, the TSL confirmation is
+         backdated to when the SL first crossed past BE, so the next
+         position gets the +1 earlier. Each multi-exit position can
+         generate up to 2 streak events (one for TP, one for TSL).
+     Note: the multiplier is always locked at position ENTRY — all exits
+     from the same position share the same size multiplier.
+
+   Advanced Martingale Rules:
+     Start After X Losses (Martingale + Inv Martingale only):
+       The multiplier won't kick in until X consecutive losses have occurred.
+       The first X losses use base size. Loss #X+1 gets multiplier^1, etc.
+       Set to 0 to disable (multiplier starts from the first loss).
+       Example: Start After = 2, multiplier = 2:
+         Loss 1 → 1x, Loss 2 → 1x, Loss 3 → 2x, Loss 4 → 4x
+
+     Reset After X Wins (Anti-Martingale + Inv Anti-Martingale only):
+       Resets the win streak counter to 0 after X consecutive wins.
+       Prevents runaway position sizes during very long winning streaks.
+       Set to 0 to disable (never resets — streak runs until a loss).
+       Example: Reset After = 3, multiplier = 2:
+         Win 1 → 2x, Win 2 → 4x, Win 3 → 8x, Win 4 → back to 1x
+
+   STREAK STUDY (Per-Strategy):
+     In the Optimization tab → Per-Strategy Filters section, expand any
+     batch card and click "Run Streak Study" at the bottom.
+     This analyses your IN-SAMPLE trades only (never OOS) to determine
+     whether Fixed, Martingale, or Anti-Martingale sizing is justified:
+
+     What it shows:
+       - Transition Matrix: probability of Win→Win, Win→Loss, Loss→Win,
+         Loss→Loss — shows whether outcomes are streak-dependent
+       - Autocorrelation: positive = streaky, negative = mean-reverting,
+         ~0 = random/independent
+       - Chi-squared p-value: below 0.05 = statistically significant
+       - Recommendation: which method the data supports, with confidence
+       - Simulated comparison: runs IS trades through Fixed, Martingale,
+         and Anti-Martingale at default settings to compare outcomes
+
+     Use this to make a data-driven choice before enabling Martingale
+     or Anti-Martingale in the Risk Profile section.
+
+   PAPER ↔ LIVE ISOLATION (added 2026-04-21):
+     Martingale streak counters read from the closed-trade history in
+     the database. To prevent paper trades from affecting live streak
+     (or vice versa), every Trade record is now tagged with an
+     "is_paper" flag. The streak query automatically filters by the
+     engine's current mode:
+       - Engine in PAPER mode  → sees only paper trades for the streak
+       - Engine in LIVE  mode  → sees only live  trades for the streak
+
+     On portfolio activation, the engine now refuses a mode mismatch
+     (e.g. trying to activate a "paper" portfolio while the engine is
+     in live mode). You'll see an ACTIVATION REFUSED message in the
+     log. To switch a portfolio across modes, clone it into a new
+     portfolio rather than flipping .env PAPER_TRADING on an existing
+     one — that way each mode has clean, isolated streak history.
+
+   HEARTBEAT + DEGRADED-STATE ALERTS (added 2026-04-21):
+     Two background processes must stay alive 24/7: the Candle Sync
+     window and the Live Engine (reconciliation loop). If either one
+     crashes or freezes at 3am, you used to find out the next morning.
+     Now the backend tracks their heartbeat, and the Telegram bot
+     alerts you within ~60 seconds.
+
+     How it works:
+       - candle_sync.py writes a heartbeat file on every loop pass.
+       - engine_coordinator writes one on every reconciliation tick.
+       - GET /health reports:
+           status = "ok"       → all components fresh
+           status = "degraded" → at least one heartbeat is stale
+           status = "unknown"  → never beaten (fresh install — not alert-worthy)
+       - The Telegram bot's health_check job polls /health every 60s
+         and messages you when the state changes (edge-triggered —
+         you get one alert when it breaks, one when it recovers).
+
+     Thresholds:
+       - candle_sync: 35 minutes (covers one 30m bar + probe + download)
+       - engine_reconciliation: 60 seconds (vs the 5s default tick rate)
+
+     Where the heartbeats live: data/heartbeats/*.hb (one file per
+     component). You can delete them safely — they'll be re-created
+     on the next loop pass.
+
+     Sample alerts you'll see on Telegram:
+       "Backend degraded — stale heartbeat:
+        - candle_sync (2401.3s old, max 2100s)"
+       "Backend recovered — all components healthy."
+
+
+5. SETTINGS
+   Shows your current platform configuration (paper trading mode,
+   risk limits, default leverage, etc.). Read-only for now.
+
+
+--- SIGNAL SCANNER (automatic) ---
+
+The [4/6] Candle Sync + Scanner window runs automatically in the
+background. You do NOT need to interact with it. Here's what it does:
+
+  1. Calculates when the next bar closes (e.g. 14:30 for 30m bars)
+  2. Sleeps until that exact time
+  3. Probes Bybit every 5 seconds until the new candle is ready
+  4. Downloads new candles for ALL active portfolio symbols in parallel
+  5. Runs each strategy on the new bars and checks for trading signals
+  6. Logs any signals found (e.g. "SIGNAL: ENTRY LONG BTCUSDT @ 92450")
+  7. Saves updated strategy state so it picks up exactly where it left off
+  8. Calculates the next bar close and repeats
+
+Multi-timeframe: If your strategies use 30m, 1h, 4h, or daily candles,
+all timeframes are tracked. The scanner wakes at the SOONEST bar close
+across all active timeframes.
+
+First-time setup: When you activate a portfolio, the scanner automatically
+seeds its state from the last backtest. No manual setup needed.
+
+Signal latency: Signals arrive ~10-20 seconds after bar close (not 5 min).
+
+To check it's working: Look at the [4/6] terminal window. You should see
+messages like "Syncing 40 symbols across 3 timeframes" and either
+"Signal scan: no new signals" or "Signal scan: X signal(s) found!".
+
+
+--- TYPICAL WORKFLOW ---
+
+   Data  -->  Strategies  -->  Backtest  -->  Portfolio  -->  Signals
+
+   1. Go to Data, download history for your symbols
+   2. Go to Strategies, paste and save your PineScript
+   3. Go to Backtest, select strategy + symbol, hit Run
+   4. Review the metrics and trade list
+   5. Save promising results to a portfolio and activate it
+   6. The signal scanner picks up active portfolios automatically
+
+
+--- SETTINGS RECOMMENDER (Cross-Strategy tab) ---
+
+The Settings Recommender analyses your IS data (without touching OOS) to
+recommend optimal optimizer settings. It has two modes:
+
+  QUICK MODE (heuristic, ~10 seconds):
+   - Analyses your pool statistics (correlation, trade counts, outliers)
+   - Produces a list of recommendations you can "Apply" individually
+     or click "Apply All" to set them all at once
+   - Only recommends algorithms from those you have checked
+
+  THOROUGH MODE (cross-validation sweep):
+   - Tests multiple setting combinations via walk-forward CV
+   - Shows top presets ranked by validation performance
+   - Only tests the algorithms you have checked
+
+  INPUT CONTROLS:
+   At the top of the recommender panel you can override these settings:
+   - Mode: Combined or L/S Split (Long/Short separately)
+   - Number of assets to find (total, or longs + shorts if L/S Split)
+   These default to whatever you have set in the main Cross-Strategy
+   config, but you can change them here to test different configurations
+   without leaving the recommender.
+
+  ALGORITHM SELECTION:
+   Nine algorithms are available as checkboxes (all checked by default):
+   - Greedy: Iteratively adds the best asset at each step
+   - HRP: Hierarchical Risk Parity (correlation clustering)
+   - PCA: Factor Clustering (principal component diversification)
+   - Quality First: Ranks by individual quality, drops correlated pairs
+   - Tournament: Random draft sampling for broad diversity
+   - Genetic: Evolves portfolios over generations (see GENETIC ALGORITHM below)
+   - Marginal Sharpe: Adds assets by marginal risk-adjusted contribution
+   - Ensemble: Combines multiple methods for consensus
+   - Walk-Forward: Validates selections on held-out data
+   Uncheck any you don't want to test. At least one must remain checked.
+   Hover over each checkbox for a tooltip explaining the algorithm.
+
+--- GENETIC ALGORITHM ---
+
+  The Genetic Algorithm works like natural evolution applied to portfolios:
+
+  HOW IT WORKS:
+   1. Creates a "population" of random portfolios (half biased toward
+      top-ranked assets, half fully random)
+   2. Scores each portfolio using your chosen Objective (e.g. Stability)
+   3. For each new generation:
+      - Keeps the best portfolios unchanged (Elite %)
+      - Breeds new portfolios by combining assets from two good parents (Crossover)
+      - Randomly swaps assets in some portfolios (Mutation)
+   4. After all generations, returns the best portfolios found
+
+  WHEN TO USE IT:
+   - Large asset pools (40+ assets) where greedy might miss good combos
+   - When you want to explore more of the search space
+   - When other algorithms keep returning similar portfolios
+   - Works with any Objective (Stability, Sortino, Sharpe, etc.)
+
+  SETTINGS (visible when Genetic Algorithm is selected):
+   - Generations (10-500, default 50): How many evolution cycles to run.
+     More = better solutions but slower. 30-100 is typical.
+   - Population (20-1000, default 100): Number of candidate portfolios
+     in each generation. Larger = more diverse search. 50-300 is typical.
+   - Mutation % (1-50, default 10): Chance of randomly swapping assets.
+     Higher = more exploration, lower = more stable convergence.
+   - Crossover % (10-100, default 70): Chance of breeding two portfolios.
+     Higher = more mixing of successful traits.
+   - Elite % (1-50, default 10): Top portfolios kept unchanged each
+     generation. Protects best solutions from being lost.
+
+  TIPS:
+   - Start with defaults (50 gen, 100 pop, 10% mut, 70% cross, 10% elite)
+   - If results look too similar: increase Mutation % or Population
+   - If results are too random: decrease Mutation %, increase Elite %
+   - For very large pools (100+ assets): increase Population to 200-300
+   - Genetic is slower than Greedy/Tournament but explores more combos
+
+  SEARCH DEPTH (Thorough mode only):
+
+   MASTER DEPTH SLIDER (1-100%):
+     Controls the overall sweep depth across ALL dimensions at once.
+     Moving the master slider resets any per-dimension overrides.
+
+   PER-DIMENSION CONTROLS:
+     Below the master slider, each sweep dimension has its own row:
+     - Objectives (1-5): stability, hybrid, max_sortino, max_sharpe, max_calmar
+     - Guards (1-4): light, moderate, aggressive, max
+     - Filters (1-4): none, mild, moderate, aggressive
+     - Seeds (1-4): which seed ranking metrics to test
+     - Folds (1-3): number of cross-validation folds
+
+     Each row shows:
+     - A mini slider to override that dimension independently
+     - The count (e.g. "3/5") and what's included at that level
+     - A reset icon if you've manually overridden it (click to follow master again)
+
+     Example: Set master to 50%, then manually bump Guards to 4/4.
+     Now Guards tests all 4 presets while other dimensions follow the 50% depth.
+     If you move the master slider again, Guards resets to follow the master.
+
+   "Try extreme values" checkbox:
+     When checked, adds extra presets that test unusually high and low
+     parameter values (very permissive and very strict filters/guards).
+
+   "Sweep seed weight" checkbox:
+     When checked, tests multiple seed prior weights (0.0, 0.10, 0.20).
+     When unchecked, uses 0.10 only.
+
+   COMBO ESTIMATE:
+     The estimated combo count and evaluation count is shown live as you
+     adjust controls. Formula: algos x objectives x guards x filters x
+     seeds x seed_weights, then multiplied by folds for total evaluations.
+     Adjust until the estimate fits your time budget.
+
+  RESULTS:
+   - Quick mode: Each recommendation shows the algorithm with a tooltip
+     explaining why it was chosen. Click "Apply" or "Apply All".
+   - Thorough mode: Top presets table with columns:
+     - Algorithm: Which optimizer was used
+     - Objective: The scoring function (e.g. stability, hybrid)
+     - Guard: Overfitting guard preset
+     - Seeds: Which seed ranking metrics were used
+     - Val Stability: Equity curve smoothness on unseen data (0-1, higher = better)
+     - Val PF: Validation profit factor (above 1.0 = profitable)
+     - Overfit Ratio: Validation/training performance (1.0 = no overfitting)
+     - Composite: Combined score used to rank presets
+     Hover over any column header for a tooltip explaining what it means
+     and what values are considered good.
+
+
+--- TELEGRAM BOT (Mobile Companion) ---
+
+Control and monitor The War Room from your phone via Telegram.
+The bot runs on your PC and talks to the backend on localhost.
+
+SETUP (one-time):
+
+  1. Open Telegram on your phone, search for @BotFather
+  2. Send /newbot and follow the prompts to create your bot
+  3. BotFather gives you a token like: 7123456789:AAHx2DfG...
+  4. Send any message to your new bot (e.g. "hello")
+  5. Open this URL in your browser (replace <TOKEN> with your token):
+       https://api.telegram.org/bot<TOKEN>/getUpdates
+  6. Find "chat":{"id": in the response — that number is your chat ID
+  7. Open The_War_Room/backend/config/.env and add both values:
+       TELEGRAM_BOT_TOKEN=7123456789:AAHx2DfG...
+       TELEGRAM_CHAT_ID=987654321
+  8. Restart The War Room — window [5/5] will appear for the bot
+
+OPTIONAL SETTINGS (in .env, all have sensible defaults):
+  TELEGRAM_NOTIFICATIONS_ENABLED=true     Push notifications on/off (default: true)
+  TELEGRAM_EVENT_POLL_SECONDS=10          How often to check for new events (default: 10)
+  TELEGRAM_HEALTH_CHECK_SECONDS=60        How often to check backend health (default: 60)
+  TELEGRAM_CONFIRM_TIMEOUT_SECONDS=60     How long confirmations stay valid (default: 60)
+
+AVAILABLE COMMANDS:
+
+  Monitoring (read-only):
+    /status     Engine overview (running, equity, positions, P&L)
+    /positions  All open positions with P&L and SL/TP
+    /orders     Pending/active orders
+    /pnl        P&L breakdown (today, week, month, all-time)
+    /trades     Recent closed trades (usage: /trades 20)
+    /signals    Active strategy signals
+    /events     Audit log (usage: /events 50)
+    /health     Backend + exchange connection check
+    /balance    Exchange account balance
+    /btc        BTC price + 24h change
+    /kpis       Key performance indicators
+    /ping       Bot alive check (no backend needed)
+
+  Portfolios:
+    /portfolios      List all portfolios with status
+    /portfolio <id>  Portfolio details
+    /activate <id>     Activate for live trading
+    /activatepaper     Activate ALL paper portfolios (type PAPER to confirm)
+    /activatelive      Activate ALL live portfolios (type LIVE to confirm)
+    /deactivate <id> Deactivate
+    /monitor <id>    Start candle sync (no trading)
+    /stopmon <id>    Stop monitoring
+    /refresh <id>    Sync portfolio with exchange
+
+  Engine Control:
+    /start           Start engine (requires confirmation if LIVE mode)
+    /stop            Graceful stop
+    /estop           Emergency stop (type EMERGENCY to confirm)
+    /resetsafety     Reset circuit breakers (type RESET to confirm)
+
+  Position Management:
+    /close <id>      Close a single position
+    /closeall        Close all positions (type CLOSEALL to confirm)
+
+  System:
+    /help            Show all commands
+
+AUTOMATIC NOTIFICATIONS:
+  The bot automatically pushes alerts to your phone:
+    - Trade opened/closed (with P&L)
+    - Engine started/stopped
+    - Circuit breaker triggered
+    - Entry blocked (safety check)
+    - Backend down/restored
+
+SECURITY:
+  - Only YOUR Telegram account can control the bot (locked by chat ID)
+  - Dangerous commands require typing a specific confirmation word
+  - The bot talks to localhost only — your API is never exposed
+
+═══════════════════════════════════════════════════════════
+  QUICK ACTIVATE (Dashboard)
+═══════════════════════════════════════════════════════════
+
+The Dashboard has a "Quick Activate" section at the top.
+It shows your Paper and Live portfolios side by side with:
+  - "Activate All (N)" — start candle gathering for all saved portfolios
+  - "Go Live All (N)" — go live with all monitoring portfolios
+These are split into Paper vs Live groups (2 separate clicks).
+
+The same buttons appear on the Live Trading page under Portfolio Management.
+
+RESTART BEHAVIOR:
+  When the backend restarts and the engine starts up:
+  - All portfolios that were live trading (real AND paper) auto-resume
+  - Open positions with trailing stops restore their TSL tracking
+  - WebSocket feeds reconnect automatically
+  - No manual re-activation needed
+
+
+═══════════════════════════════════════════════════════════
+  WFAS — OVERFIT GUARD (works in ALL 4 modes)
+═══════════════════════════════════════════════════════════
+
+The Overfit Guard is a statistical filter that protects you from
+"too good to be true" picks. You'll find it as a checkbox + Mode
+dropdown right under the Mode selector on the WFO Asset Selection
+page — visible regardless of which mode you have selected.
+
+WHEN OFF (default): runs are byte-identical to a guard-free run.
+                    Old saved presets behave exactly as before.
+
+WHEN ON: behaviour depends on the active mode.
+
+  Batch Selection mode
+    Activates the 5-approach asset-level guard inside the Step 3
+    asset picker. The Mode dropdown chooses how aggressive:
+      - Log Diminish       : compresses extreme metrics (gentlest)
+      - Z-Score Penalty    : penalises assets >2σ above batch peers
+      - Bayesian Shrinkage : pulls metrics toward batch mean for
+                             low-trade-count assets
+      - Log + Z-Score      : log + z combined
+      - Full (all 5)       : every approach (most aggressive)
+
+  Auto / Manual / Directional modes
+    Activates portfolio-level Walk-Forward Re-rank — splits each IS
+    window into 70% train / 30% validation, builds candidates on
+    the train half, then re-ranks them by stability on the held-out
+    validation half. Mode dropdown is unused in these modes.
+
+OLD PRESETS — backwards compatibility
+
+  - Presets that already set bs_overfit_guard_enabled keep working
+    exactly as before. The visible checkbox will reflect the active
+    state when you load such a preset.
+  - Presets that omit the new top-level fields → run identically
+    to today (defaults are OFF / "log").
+
+WHEN TO ENABLE
+
+  - You have a 92-batch pool and you want extra protection against
+    cherry-picked outliers in Step 3 → enable in Batch Selection
+    mode with mode = "Full" or "Z-Score".
+  - You're using Auto/Manual/Directional and you want the optimizer
+    to prefer candidates that work on held-out IS data, not just
+    the full IS → enable. This is essentially "in-sample WFA on top
+    of WFO."
+  - You're reproducing a saved preset → leave it as the preset has
+    it. The preset's value wins.
+
+
+═══════════════════════════════════════════════════════════
+  WFO — BATCH SELECTION MODE
+═══════════════════════════════════════════════════════════
+
+Batch Selection is the 4th WFO mode (alongside Auto, Manual, Directional).
+It uses a 3-step hierarchical pipeline instead of an optimizer:
+
+  Step 1 — IS Screening
+    Ranks all batches by a metric (default: Net PnL) on the IS period.
+    Filters: must be profitable, must meet min PF, must have enough
+    non-zero trading days. Keeps the top N candidates.
+
+  Step 2 — Calibration Gate
+    Confirms candidates against the PREVIOUS window's OOS data.
+    This is the key innovation — it's like a 1-window look-back that
+    checks if a batch "would have worked" on the most recent unseen data.
+    Window 1 has no previous OOS, so it uses IS-only ranking (cold start).
+    If too few batches pass, remaining slots are filled from IS ranking.
+
+  Step 3 — Asset Picking
+    For each selected batch, picks the best individual assets by a
+    metric (default: Lake Ratio) on IS data. Stops adding assets if
+    the estimated trades-per-month would exceed the max TPM limit.
+
+
+--- HOW TO USE ---
+
+1. Go to WFO tab > Asset Selection
+2. Select your batch(es)
+3. Click "Batch Selection" mode button
+4. Defaults auto-switch to IS=12mo, OOS=3mo (spec-tested defaults)
+5. Set your Data Start date (see Q-alignment tip below)
+6. Adjust settings or keep defaults
+7. Click "Run WFO (Batch Selection)"
+
+
+--- SETTINGS ---
+
+  Max Batches (default 4)
+    How many batches to keep per window after calibration.
+
+  Assets / Batch (default 3)
+    How many assets to pick from each selected batch.
+
+  IS Candidates (default 20)
+    How many batches to consider after IS screening.
+
+  Min Calibrated (default 3)
+    Minimum batches that must pass calibration. If fewer pass,
+    remaining slots are filled from IS-ranked candidates.
+
+  IS Rank Metric (default: Net PnL)
+    Metric used to rank batches in Step 1.
+
+  Cal Rank Metric (default: Tail Ratio)
+    Metric used to rank batches in Step 2 (calibration).
+
+  Asset Rank Metric (default: Lake Ratio)
+    Metric used to rank individual assets in Step 3.
+
+  Min PF (IS) (default 1.0)
+    Minimum profit factor required during IS screening.
+
+  Min IS Days (default 30)
+    Minimum non-zero PnL days in the IS period. Counts actual trading
+    days (days with non-zero PnL), not calendar days.
+
+  Min Asset Days (default 20)
+    Minimum non-zero PnL days for an individual asset.
+
+  Cal Must Profit (default: on)
+    Require positive net PnL on the previous OOS to pass calibration.
+
+  Asset Must Profit (default: on)
+    Require positive net PnL for an asset during IS.
+
+  Max TPM (default 40)
+    Maximum estimated trades per month. Stops adding assets once this
+    limit would be exceeded.
+
+
+--- SCORING METRICS (available for all 3 ranking steps) ---
+
+  Net PnL         Sum of daily PnL
+  Lake Ratio      Area-weighted: equity area above water / total area
+  Tail Ratio      p95 / |p5| on non-zero days only
+  Sortino          mean(pnl) / downside deviation
+  Calmar          final equity / |max drawdown|
+  Profit Factor   min(gross profit / gross loss, 10)
+  Gain/Pain       sum(pnl) / |sum(losses)|
+  Expectancy      (WR * avg_win - (1-WR) * avg_loss) / avg_loss
+  Stability       R-squared of equity curve (pure, not blended)
+  Robust Sortino  median(pnl) / downside deviation
+
+
+--- Q-ALIGNMENT TIP ---
+
+Use a Data Start date aligned to quarter boundaries for best results:
+  Jan 1, Apr 1, Jul 1, Oct 1
+
+Testing showed 68% avg calibrated win rate with Q-aligned starts
+vs 42% without — a 26 percentage point difference.
+
+
+--- KEY RESULTS ---
+
+  Calibrated WR
+    The main KPI. Shows how often calibrated windows were profitable
+    OOS. Excludes Window 1 (cold start, no calibration available).
+    Format: "7/10 (70%)" = 7 out of 10 calibrated windows were profitable.
+
+  Calibrated PnL
+    Total OOS profit from calibrated windows only.
+
+  Cold Start Warning
+    Window 1 always uses IS-only ranking (no previous OOS to calibrate
+    against). Its results are less reliable than calibrated windows.
+
+
+--- OOS CONTAMINATION ---
+
+  How this mode keeps IS and OOS apart:
+  - Step 1 uses only IS data
+  - Step 2 uses only the PREVIOUS window's OOS (historical at decision time)
+  - Step 3 uses only IS data
+  - OOS evaluation is reporting-only, never feeds back to selection
+  - PnL is indexed by trade ENTRY date, so each trade counts in the period
+    where the decision to take it was made
+
+  - A trade that ENTERS before the decision (the day before OOS starts) but
+    is still OPEN at it is left out of Steps 1-3: its result was not known
+    yet. (Fixed 2026-10-08 — before that, it counted with its full result.)
+    OOS reporting still counts every trade entered in the OOS period.
+
+
+--- SESSION FILTER (All Optimizer Surfaces) ---
+
+  Filters trades by time-of-day and day-of-week BEFORE optimization.
+  Available in: Single Strategy, Cross-Strategy (all modes), WFO (all modes).
+  OFF by default — enable via the "Session Filter" toggle.
+
+  THREE MODES:
+
+  1. FIXED (Manual)
+     - Exclude specific days of the week (Mon-Sun checkboxes)
+     - Exclude specific hours (0-23 UTC) individually or via named presets:
+       Asia (0-5), London (6-8), NY Session (9-16),
+       Post-Market (17-20), Asia Pre-Open (21-23)
+     - Click a preset to toggle all its hours at once
+     - Same exclusions apply to every WFO window
+
+  2. AUTO (Session Intel)
+     - Automatically keeps only hours/days with positive PnL
+     - "Min trades per slot" — hours/days need at least this many trades
+       AND positive PnL to be kept. Default: 10
+     - "Include insufficient-data slots" — ON (default): positive hours
+       with fewer trades than the minimum are still included.
+       OFF: they are excluded (stricter filter)
+     - In WFO: each window computes its own mask from its IS data
+       (adapts to changing market conditions per window)
+
+  3. SAVED MASK
+     - Select a pre-saved mask from Session Intelligence page
+     - Same as the old "Session Time Mask" dropdown
+
+  GRADE ON CROPPED DATA (toggle, all modes):
+     - OFF (default): optimizer uses filtered trades for asset SELECTION,
+       but IS grading/metrics use ALL unfiltered trades for the portfolio
+     - ON: both optimization AND IS grading use only filtered trades
+     - OOS is always filtered by the same mask (realistic forward test)
+
+  TIPS:
+  - Start with Auto mode and 10 min trades — it will learn from your data
+  - Use Fixed mode when you KNOW certain hours are bad (e.g., low liquidity)
+  - Grade on Cropped OFF gives you the "real" IS metrics without bias
+  - In WFO, auto mode is most powerful: each window gets a fresh mask
+
+
+═══════════════════════════════════════════════════════════
+  WFO — EVENT-BASED MODE
+═══════════════════════════════════════════════════════════
+
+Event-Based mode does trade-by-trade asset selection instead of calendar
+windows. It walks through ALL trades chronologically, keeping a rolling
+buffer of the last N trades per asset, and periodically picks the top
+performers to include in the portfolio.
+
+WHEN TO USE:
+  - Rare-trading strategies where time windows produce too few trades
+  - When you want continuous asset rotation (not quarterly rebalancing)
+  - When you need trade-level granularity in selection
+
+KEY SETTINGS:
+  N Trades (default 10)       How many recent trades per asset to score on
+  N Assets (default 3)        How many assets to hold at any time
+  Rebalance Every (default 10) Re-evaluate every N trades (global counter)
+  Scoring Method               "Single" (one metric) or "Composite" (blend)
+  Objective (Single only)      Metric used to rank assets under Single mode.
+                               Ignored under Composite — weights drive ranking.
+  Composite Weights            Default: 40% Sortino, 25% PF, 20% Recovery, 15% WR
+  Day Profitability Filter     Per-asset filter: skip days where that asset loses
+  Session Filter > Exclude Days  Skip specific weekdays entirely (e.g., Monday)
+
+RESEARCH PRESETS:
+  The Research Presets dropdown stores tested event-mode configurations.
+  The author's presets are not included in this copy, so it starts empty.
+  They set METHOD parameters only (scoring, filters, rebalance settings).
+  YOU choose which batches to run them on.
+
+
+═══════════════════════════════════════════════════════════
+  THE COMPLETE WORKFLOW — FROM BATCHES TO LIVE TRADING
+═══════════════════════════════════════════════════════════
+
+This is how to go from "I have batches in my database" to "I know exactly
+what to trade" in a reproducible, no-guessing way.
+
+There are 2 levels of selection:
+  Level 1 — WHICH BATCHES to trade (Batch Selection mode)
+  Level 2 — WHICH ASSETS within those batches (Event mode or Auto mode)
+
+Both levels adapt over time. Nothing is hardcoded.
+
+--- STEP 1: FIND THE BEST BATCHES (Batch Selection) ---
+
+  1. Go to WFO tab > Asset Selection
+  2. Select ALL your completed batches (don't cherry-pick)
+  3. Click "Time-Based" engine, then "Batch Selection" mode
+  4. Choose the settings, or load a preset you saved:
+     - e.g. batch metric Recovery, calibration metric Ulcer, max batches 3
+  5. Set Data Start date (Q-aligned: Jan 1, Apr 1, Jul 1, Oct 1)
+  6. Click Run
+
+  WHAT HAPPENS:
+    The 3-step pipeline slides IS/OOS windows forward through time:
+      - Each window: rank batches on IS data, calibrate on previous OOS
+      - It tells you which batches were consistently profitable OOS
+      - The results show you WHICH batches won, in WHICH windows
+
+  WHAT TO LOOK FOR:
+    - "Calibrated WR" = how often the selected batches were profitable
+    - The window details show which batch IDs were selected per period
+    - Note down the winning batch IDs from the most recent windows
+
+  HOW IT ADAPTS:
+    Run this again next quarter (or whenever you add new data).
+    The windows roll forward — yesterday's winners are re-evaluated
+    against fresh OOS data. Batches that stop performing get dropped.
+
+
+--- STEP 2: FIND THE BEST ASSETS (Event Mode) ---
+
+  1. Still in WFO tab, now DESELECT all batches
+  2. SELECT ONLY the winning batches from Step 1
+  3. Switch to "Event-Based" engine
+  4. Choose the settings, or load a preset you saved:
+     - e.g. n_trades=10, rebalance=10, composite scoring, day filter
+  5. Click Run
+
+  WHAT HAPPENS:
+    Event mode walks through every trade in those batches:
+      - Every 10 trades, it scores all assets using composite blend
+      - Picks the top 3 to include in the portfolio
+      - The day filter skips days where each specific asset loses money
+      - Produces one continuous equity curve
+
+  WHAT TO LOOK FOR:
+    - PF (profit factor) — primary metric, want > 1.5
+    - $/trade — your edge per trade
+    - T/mo — trades per month (need enough for live trading)
+    - Equity curve shape (smooth = good, choppy = risky)
+
+  HOW IT ADAPTS:
+    Asset selection updates every 10 trades — continuous rotation.
+    The day profitability filter updates every single trade.
+    Assets that stop performing are dropped at the next rebalance.
+
+
+--- STEP 3 (OPTIONAL): TEST ROBUSTNESS ---
+
+  Run Step 2 with different tier presets on the SAME winning batches:
+    - Tier 1 (no filters) — most trades, lowest PF
+    - Tier 2 (+day filter) — fewer trades, higher PF
+    - Tier 3 (+day filter +Monday skip) — fewest trades, highest PF
+
+  If ALL tiers are profitable, the method is robust on those batches.
+  If only Tier 3 is profitable, the edge is fragile.
+
+
+--- HOW OFTEN TO RE-RUN ---
+
+  Batch Selection: Every quarter (when new OOS data is available)
+  Event Mode: Whenever you change batches or want to check performance
+
+  The live trading engine handles the trade-by-trade rotation
+  automatically — you don't re-run WFAS every day. You use WFAS
+  to DISCOVER the right settings, then deploy them.
+
+
+--- WHY THIS IS REPRODUCIBLE ---
+
+  Every step uses a defined method, not random choices:
+  1. Batch Selection uses IS/OOS windows with specific metrics
+     — same data + same settings = same batch winners
+  2. Event mode uses composite scoring with specific parameters
+     — same batches + same settings = same equity curve
+  3. Research presets save the exact settings from tested configs
+     — loading a preset guarantees the same method every time
+
+  The only input you provide is "which batches exist in my database"
+  — everything else is determined by the algorithms.
+
+
+==========================================
+  CATEGORY FILTER (Phase 2 / Hybrid event mode)
+==========================================
+
+  WHAT IT IS
+  ----------
+  An additive filter that boosts (or hard-gates) Phase 2 candidate assets
+  based on the recent performance of their CoinGecko categories. The idea:
+  when "L1s" or "AI" or "DeFi" as a category is hot, every L1/AI/DeFi
+  asset gets a bonus on its composite score. When a category is cold,
+  its assets get penalized (or filtered out completely).
+
+  Category data comes from the symbol_categories table — populate it
+  via the UI (Categories page). Each symbol can belong to multiple
+  categories; an asset's effective multiplier is the MAX across all
+  its categories (best-case promotion).
+
+
+  WHERE IT LIVES IN THE UI
+  ------------------------
+  WFAS panel → right next to the existing Category Filter selector
+  (the one for filtering which assets are eligible).
+
+  - Toggle: "Category Filter (Phase 2 multiplier)"
+  - Influence: none / low / mid / high / all
+  - Lookback Trades: rolling window per category (15-30 typical)
+  - Max per Category: cap on simultaneously-held assets sharing the
+    same primary category (0 = uncapped)
+
+
+  THE FIVE INFLUENCE LEVELS
+  -------------------------
+    none  → passthrough (control). Identical to baseline.
+    low   → top tertile ×1.10, mid ×1.0, bottom ×0.90
+    mid   → top ×1.25, mid ×1.0, bottom ×0.75
+    high  → top ×1.50, mid ×1.0, bottom ×0.50
+    all   → HARD GATE — only assets in top-tertile categories pass.
+            Untagged assets are dropped.
+
+  Multipliers are applied to the composite score BEFORE the final
+  ranking and the [:n_assets] slice.
+
+
+  HOW THE CATEGORY SCORE IS COMPUTED
+  ----------------------------------
+  At every rebalance:
+    1. For each category, pool the LAST `category_lookback_trades`
+       trades from every currently-buffered asset whose symbol is
+       tagged with that category.
+    2. Compute the same composite score used for assets (sortino,
+       pf, recovery, wr blend by default).
+    3. Tertile-bucket all categories: top / mid / bottom.
+
+  Leakage guard: only trades that closed strictly BEFORE the current
+  decision point are visible (enforced by the existing CLOSE-before-
+  OPEN event ordering — no time-travel possible).
+
+
+  RECOMMENDED STARTING POINTS
+  ---------------------------
+    Probe         → influence=mid, lookback=20, max_per_cat=0
+    Aggressive    → influence=high, lookback=15, max_per_cat=2
+    Hard rotation → influence=all, lookback=20, max_per_cat=2
+
+  Expect 'all' to drastically reduce trade count (good for the
+  5-15 positions/month target). Expect 'mid' to be the closest to
+  baseline behavior with a measurable lift if categories matter.
+
+
+  WHAT IT DOES NOT DO
+  -------------------
+  - Does NOT touch the rescue system (rescue runs its own gating).
+  - Does NOT influence Step 1 batch selection (Phase 1 unchanged).
+  - Does NOT replace any existing filter — purely additive on top.
+  - When categories table is empty OR feature is off, runs in
+    passthrough (zero overhead, identical to baseline).
+
+
+================================================================
+LIVE LOOP — WHAT RUNS, WHEN, AND WHAT YOU DO
+================================================================
+
+The Live Loop is the nightly pipeline that keeps your batches
+and saved portfolios in sync with live trades, without ever
+silently changing a non-hybrid basket.
+
+It is organised as five layers (plus one audit) with their own cadences.
+The only thing you must do is:
+
+  1. Keep the backend process running (or run catch-up when
+     you come back after a few days — see MANUAL CATCH-UP).
+  2. Review any Rebalance Proposals that show up in the
+     Portfolio Hub → Live Trading → Rebalance tab.
+
+Everything else is automatic.
+
+
+THE LAYERS & THEIR SCHEDULE (as scheduled in backend/api/app.py)
+-----------------------------------------------------------------
+  L1 — Batch store refresh        Daily 01:00 NYT
+       Extends every active batch's trade store by replaying
+       the new bars since the last run. Uses the *same* engine
+       that produced the original trades, seeded with each
+       combo's captured strategy_state and open positions. The
+       resulting trades are identical to a from-scratch run
+       (proven by test_strategy_state_parity.py).
+
+  L2 — Hybrid portfolio refresh   Daily 03:00 NYT
+       For every portfolio with mode='hybrid': re-runs Step 2
+       on the fresh trade store, writes a new KellyAllocation
+       row, and flips PortfolioAsset.is_active to match the
+       new basket. Non-hybrid portfolios are NEVER touched.
+
+  L2b — Recorder audit            Daily 03:30 NYT
+       Audit-only. Checks that the hybrid basket-change recorder
+       has no gaps. Writes one report row.
+
+  L3 — OOS boundary check         Daily 04:00 NYT
+       For every portfolio whose OOS window has ended, files a
+       RebalanceProposal (status='pending'). This is the ONLY
+       path that can change a non-hybrid portfolio — and it
+       still requires you to click Approve before anything is
+       written.
+
+  L4 — Parity canary              Monthly, 1st of month 05:00 NYT
+       Audit-only. Picks every active batch, re-runs the full
+       cold engine, and diffs the resulting trades against the
+       incremental store. Writes a ParityCanaryReport row. If
+       any combo has drifted, you will see a red badge on the
+       Live Loop panel and an entry in the Activity feed.
+
+  L5 — Paper portfolio refresh    Weekly, Sunday 02:00 NYT
+       Refreshes every paper/real portfolio's live KPI snapshot
+       so you don't have to click Refresh on each one.
+
+
+WHERE TO FIND IT IN THE UI
+--------------------------
+Portfolio Hub → Live Trading tab → Rebalance sub-tab.
+At the top you will see the "Live Loop" panel with:
+  - Active batches, live portfolios, hybrid portfolios,
+    pending proposals (yellow when > 0)
+  - Last parity canary run + divergence count
+  - Two buttons: "Run Catch-Up (L1 → L2 → L3)"
+                 "+ Parity Canary (L4)"
+
+
+WHAT YOU NEED TO DO
+-------------------
+  A. Daily (or whenever you check in):
+     - Glance at the Live Loop panel. If pending proposals > 0,
+       scroll down and review each one.
+     - Approve = a NEW portfolio row is created with the new
+       basket. The OLD portfolio is archived, not deleted.
+     - Reject = portfolio continues with the current basket.
+
+  B. After a gap (you were away for 1+ days):
+     - Click "Run Catch-Up" (see MANUAL CATCH-UP below).
+     - Then check for any new pending proposals.
+
+  C. Never needed:
+     - You do NOT need to manually trigger L1, L2, or L3 if
+       the backend has been up the whole time. The scheduler
+       handles it.
+
+
+MANUAL CATCH-UP — BACKEND WAS OFFLINE FOR A FEW DAYS
+----------------------------------------------------
+If the backend was shut down for days or weeks, the scheduler
+missed its nightly jobs. Catch-up runs L1 → L2 → L3 (and
+optionally L4) synchronously so the full gap closes in one go.
+
+  Option 1 — GUI (preferred):
+    Open Portfolio Hub → Live Trading → Rebalance.
+    Click "Run Catch-Up (L1 → L2 → L3)". Wait. The panel will
+    show "✓ 3 layers OK" when done.
+
+  Option 2 — API (if the frontend is down):
+    POST http://localhost:8055/api/live-loop/catch-up
+    POST http://localhost:8055/api/live-loop/catch-up?include_canary=true
+    POST http://localhost:8055/api/live-loop/run/l1     (or l2 / l3 / l4)
+    GET  http://localhost:8055/api/live-loop/status
+
+  Idempotency guarantee:
+    - L1 no-ops for batches that already have the latest bars.
+    - L2 rewrites KellyAllocation but only within the hybrid's
+      OOS window, and the prior row is marked is_current=False.
+    - L3 skips portfolios that already have a pending proposal.
+    - L4 is read-only.
+    => You can click catch-up twice in a row and nothing breaks.
+
+
+WHY BATCHES ARE SEAMLESS (THIS IS THE IMPORTANT PART)
+-----------------------------------------------------
+Every batch's BacktestRun carries two things:
+  - strategy_state_json — every indicator's internal buffer,
+    every running EMA/ATR value, every PineScript-style
+    persistent variable, captured at the exact bar the last
+    run ended on.
+  - open_positions_json — every position that was still open
+    when the last run ended (entry price, SL/TP/TSL, timestamps).
+
+At L1 refresh time:
+  1. Load new bars since BacktestRun.end_date.
+  2. Call BacktestEngine.run(
+       inject_strategy_state = <captured state>,
+       inject_positions      = <open positions>,
+     )
+  3. Append the new trades to BacktestTrade.
+
+This is the same code path the optimizer already uses for its
+scanner resume — zero engine edits were made for the Live Loop.
+It is proven bit-identical by:
+
+  backend/tests/test_strategy_state_parity.py
+    cold run (180 bars) == resume run (100 bars, capture state,
+                          then resume with 80 bars) — trade lists
+                          are byte-for-byte equal.
+
+  backend/tests/test_incremental_replay.py
+    multi-batch orchestration + DB writes stay consistent.
+
+
+SMOKE TESTS YOU CAN RUN
+-----------------------
+From the The_War_Room/ directory:
+
+  python -m pytest backend/tests/test_strategy_state_parity.py -x -q
+    → Proves L1 resume is bit-identical to cold run.
+
+  python -m pytest backend/tests/test_incremental_replay.py -x -q
+    → Proves L1 batch orchestration works end-to-end.
+
+  python -m pytest backend/tests/test_hybrid_update.py -x -q
+    → Proves L2 changes hybrid baskets only, never non-hybrid.
+
+  python -m pytest backend/tests/test_non_hybrid_freeze.py -x -q
+    → Proves non-hybrid portfolios stay byte-identical after
+      a full nightly cycle (Safety Contract).
+
+  python -m pytest backend/tests/test_step1_rotation.py -x -q
+    → Proves L3 files proposals at OOS boundaries without
+      auto-applying them. Approve/reject flow.
+
+  python -m pytest backend/tests/test_parity_canary.py -x -q
+    → Proves L4 catches drift and is audit-only (no mutations).
+
+  python -m pytest backend/tests/test_live_loop_catchup.py -x -q
+    → Proves the manual catch-up endpoint runs L1 → L2 → L3
+      in order and keeps going even if one layer crashes.
+
+  Shortcut — run all seven at once:
+    python -m pytest backend/tests/test_strategy_state_parity.py \
+                     backend/tests/test_incremental_replay.py \
+                     backend/tests/test_hybrid_update.py \
+                     backend/tests/test_non_hybrid_freeze.py \
+                     backend/tests/test_step1_rotation.py \
+                     backend/tests/test_parity_canary.py \
+                     backend/tests/test_live_loop_catchup.py -x -q
+
+
+THINGS THAT COULD SURPRISE YOU
+------------------------------
+  - Hybrid baskets CAN rotate overnight without approval — that
+    is the *definition* of hybrid mode. If you don't want that,
+    save the portfolio as non_hybrid.
+  - Non-hybrid baskets CANNOT rotate without your Approve click,
+    even at the OOS boundary. A proposal is filed and waits.
+  - Approve creates a NEW Portfolio row. The old one is
+    is_active=False + is_deleted=False (archived, recoverable).
+  - If the parity canary fires, do NOT panic. It is an audit
+    that compares cold vs incremental. A small pnl_delta under
+    a few cents is usually just float rounding. Anything larger
+    means open an investigation.
+  - WARROOM_DISABLE_SCHEDULER=1 turns the nightly scheduler off
+    (useful on worker processes that share the DB but should
+    not run jobs themselves).
+

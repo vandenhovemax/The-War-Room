@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+backend/config/.env
+data/*
+!data/README.md
+!data/cleanup_orphans.py
+logs/
+node_modules/
+.next/
+tsconfig.tsbuildinfo
+.ruff_cache/
+.pytest_cache/
+.DS_Store

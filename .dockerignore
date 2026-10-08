@@ -1,0 +1,15 @@
+# NEVER ship secrets or data into an image.
+**/.env
+**/.env.*
+*.env.bak*
+data/
+logs/
+Co-Work/
+frontend/
+.claude/
+**/__pycache__/
+*.py[cod]
+*.bak
+*.db
+*.db-wal
+*.db-shm

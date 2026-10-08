@@ -1,0 +1,241 @@
+{
+  "all_trades_hash": "3cc78e7c9ab5c339",
+  "fixture": {
+    "bs_config_hash": "5aa99954decafb9f",
+    "bt_config_hash": "44a9bb8040d052f4",
+    "n_days": 600,
+    "strategy": "_SMACrossoverStrategy",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "tf_minutes": 30
+  },
+  "optimiser_windows": [
+    {
+      "candidates": [
+        {
+          "asset_keys": [],
+          "is_metrics": {
+            "active_days": 0,
+            "avg_loss": 0,
+            "avg_trade": 0,
+            "avg_win": 0,
+            "calmar": 0,
+            "expectancy": 0,
+            "gross_loss": 0,
+            "gross_profit": 0,
+            "longest_dd_days": 0,
+            "max_drawdown": 0,
+            "n_losses": 0,
+            "n_wins": 0,
+            "net_profit": 0,
+            "payoff_ratio": 0,
+            "profit_factor": 0,
+            "recovery_factor": 0,
+            "return_dd_ratio": 0,
+            "sharpe": 0,
+            "sortino": 0,
+            "stability": 0,
+            "total_days": 0,
+            "total_trades": 0,
+            "win_rate": 0
+          },
+          "n_assets": 0,
+          "oos_metrics": {
+            "active_days": 0,
+            "avg_loss": 0,
+            "avg_trade": 0,
+            "avg_win": 0,
+            "calmar": 0,
+            "expectancy": 0,
+            "gross_loss": 0,
+            "gross_profit": 0,
+            "longest_dd_days": 0,
+            "max_drawdown": 0,
+            "n_losses": 0,
+            "n_wins": 0,
+            "net_profit": 0,
+            "payoff_ratio": 0,
+            "profit_factor": 0,
+            "recovery_factor": 0,
+            "return_dd_ratio": 0,
+            "sharpe": 0,
+            "sortino": 0,
+            "stability": 0,
+            "total_days": 0,
+            "total_positions": 0,
+            "total_trades": 0,
+            "win_rate": 0
+          },
+          "selected_batches": []
+        }
+      ],
+      "is_end": "2023-12-31",
+      "is_start": "2023-01-01",
+      "oos_end": "2024-03-31",
+      "oos_start": "2024-01-01",
+      "window_num": 1
+    },
+    {
+      "candidates": [
+        {
+          "asset_keys": [],
+          "is_metrics": {
+            "active_days": 0,
+            "avg_loss": 0,
+            "avg_trade": 0,
+            "avg_win": 0,
+            "calmar": 0,
+            "expectancy": 0,
+            "gross_loss": 0,
+            "gross_profit": 0,
+            "longest_dd_days": 0,
+            "max_drawdown": 0,
+            "n_losses": 0,
+            "n_wins": 0,
+            "net_profit": 0,
+            "payoff_ratio": 0,
+            "profit_factor": 0,
+            "recovery_factor": 0,
+            "return_dd_ratio": 0,
+            "sharpe": 0,
+            "sortino": 0,
+            "stability": 0,
+            "total_days": 0,
+            "total_trades": 0,
+            "win_rate": 0
+          },
+          "n_assets": 0,
+          "oos_metrics": {
+            "active_days": 0,
+            "avg_loss": 0,
+            "avg_trade": 0,
+            "avg_win": 0,
+            "calmar": 0,
+            "expectancy": 0,
+            "gross_loss": 0,
+            "gross_profit": 0,
+            "longest_dd_days": 0,
+            "max_drawdown": 0,
+            "n_losses": 0,
+            "n_wins": 0,
+            "net_profit": 0,
+            "payoff_ratio": 0,
+            "profit_factor": 0,
+            "recovery_factor": 0,
+            "return_dd_ratio": 0,
+            "sharpe": 0,
+            "sortino": 0,
+            "stability": 0,
+            "total_days": 0,
+            "total_positions": 0,
+            "total_trades": 0,
+            "win_rate": 0
+          },
+          "selected_batches": []
+        }
+      ],
+      "is_end": "2024-03-31",
+      "is_start": "2023-04-01",
+      "oos_end": "2024-06-30",
+      "oos_start": "2024-04-01",
+      "window_num": 2
+    },
+    {
+      "candidates": [
+        {
+          "asset_keys": [],
+          "is_metrics": {
+            "active_days": 0,
+            "avg_loss": 0,
+            "avg_trade": 0,
+            "avg_win": 0,
+            "calmar": 0,
+            "expectancy": 0,
+            "gross_loss": 0,
+            "gross_profit": 0,
+            "longest_dd_days": 0,
+            "max_drawdown": 0,
+            "n_losses": 0,
+            "n_wins": 0,
+            "net_profit": 0,
+            "payoff_ratio": 0,
+            "profit_factor": 0,
+            "recovery_factor": 0,
+            "return_dd_ratio": 0,
+            "sharpe": 0,
+            "sortino": 0,
+            "stability": 0,
+            "total_days": 0,
+            "total_trades": 0,
+            "win_rate": 0
+          },
+          "n_assets": 0,
+          "oos_metrics": {
+            "active_days": 0,
+            "avg_loss": 0,
+            "avg_trade": 0,
+            "avg_win": 0,
+            "calmar": 0,
+            "expectancy": 0,
+            "gross_loss": 0,
+            "gross_profit": 0,
+            "longest_dd_days": 0,
+            "max_drawdown": 0,
+            "n_losses": 0,
+            "n_wins": 0,
+            "net_profit": 0,
+            "payoff_ratio": 0,
+            "profit_factor": 0,
+            "recovery_factor": 0,
+            "return_dd_ratio": 0,
+            "sharpe": 0,
+            "sortino": 0,
+            "stability": 0,
+            "total_days": 0,
+            "total_positions": 0,
+            "total_trades": 0,
+            "win_rate": 0
+          },
+          "selected_batches": []
+        }
+      ],
+      "is_end": "2024-06-30",
+      "is_start": "2023-07-01",
+      "oos_end": "2024-10-15",
+      "oos_start": "2024-07-01",
+      "window_num": 3
+    }
+  ],
+  "summary_totals": {
+    "grand_net_profit": -679989.474947,
+    "n_windows_with_candidates": 3,
+    "total_trades": 30
+  },
+  "trades_per_symbol": {
+    "BTCUSDT": {
+      "first_entry": "2023-01-01T20:00:00",
+      "last_exit": "2024-08-22T23:30:00",
+      "n_trades": 14,
+      "total_net_profit": -454686.019735,
+      "trades_hash": "14defd638cc1db01"
+    },
+    "ETHUSDT": {
+      "first_entry": "2023-01-01T18:30:00",
+      "last_exit": "2024-08-22T23:30:00",
+      "n_trades": 10,
+      "total_net_profit": -226294.925246,
+      "trades_hash": "290c9824ba57deb3"
+    },
+    "SOLUSDT": {
+      "first_entry": "2023-01-01T23:00:00",
+      "last_exit": "2024-08-22T23:30:00",
+      "n_trades": 6,
+      "total_net_profit": 991.470034,
+      "trades_hash": "879fbc39322b9799"
+    }
+  },
+  "version": 1
+}

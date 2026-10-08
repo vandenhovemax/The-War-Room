@@ -1,0 +1,6 @@
+# Everything needed to run the full test suite (versions verified 2026-10-08).
+# pip install -r requirements-dev.txt
+-r backend/requirements.txt
+-r telegram_bot/requirements.txt
+pytest==9.1.1
+pytest-asyncio==1.4.0   # 3 Telegram tests are async; without it they fail
