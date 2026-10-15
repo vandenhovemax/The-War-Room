@@ -1,4 +1,4 @@
-The War Room
+# The War Room
 
 **A walk-forward backtesting and execution engine for crypto perpetual futures, connected live to Bybit V5.**
 
@@ -10,7 +10,7 @@ Instead of optimizing for shiny backtest charts, most of the engineering here go
 
 ## The Core Design
 
-Trading logic moves through a strict pipeline: raw market data $\rightarrow$ strategy execution $\rightarrow$ walk-forward analysis $\rightarrow$ adversarial stress testing $\rightarrow$ portfolio assembly $\rightarrow$ paper trading $\rightarrow$ live execution.
+Trading logic moves through a strict pipeline: raw market data → strategy execution → walk-forward analysis → adversarial stress testing → portfolio assembly → paper trading → live execution.
 
 ### 1. Stopping Overfitting
 
@@ -21,7 +21,7 @@ Trading logic moves through a strict pipeline: raw market data $\rightarrow$ str
 ### 2. Stress Testing & Parity
 
 * **Adversarial tests:** Strategies are tested against randomized exit timing, heavy-tail trade removal (testing survival without the biggest winning trades), and Monte Carlo sequence shuffling to check actual drawdown risk.
-* **Backtest-to-live parity:** A dedicated harness runs the live trading loop and the backtest engine side-by-side over historical candles to verify that live entry and exit signals match backtest decisions field-for-field.
+* **Backtest-to-live parity:** A dedicated harness runs the live trading loop and the backtest engine side-by-side over historical candles to verify that every live entry decision and its stop and target levels match the backtest. Exit execution is validated separately, on the exchange's test network.
 * **Incremental state snapshots:** Daily jobs snapshot indicator buffers and open positions rather than recalculating years of history from scratch. Regular automated audits rerun full backtests from clean data to detect quiet state drift.
 
 ### 3. Execution & Safety
@@ -53,9 +53,7 @@ Trading logic moves through a strict pipeline: raw market data $\rightarrow$ str
 ```bash
 pip install -r backend/requirements.txt
 python -m backend.main
-
 ```
-
 
 2. **Start the background workers:**
 ```bash
@@ -64,19 +62,14 @@ python candle_sync.py
 
 # Terminal 3: Download worker
 python download_worker.py
-
 ```
-
 
 3. **Start the UI:**
 ```bash
 cd frontend
 npm install
 npm run dev
-
 ```
-
-
 
 *Note: You can run historical backtests, walk-forward analysis, and paper trade right away without adding exchange keys.*
 
@@ -86,6 +79,12 @@ npm run dev
 
 * **Intrabar Fills:** OHLC bar backtesting cannot know the sub-bar price sequence. Stop-loss orders take priority over targets conservatively, but trailing stops assume extreme price highs or lows were hit first.
 * **Local Environment:** Designed for single-machine deployment with local storage.
+
+---
+
+## How It Was Built
+
+The code was written by AI coding agents, mainly Claude Code, working to my specifications. I designed the architecture and the validation rules, reviewed the results, and ran the tests. The test suite passes on a fresh clone.
 
 ---
 
